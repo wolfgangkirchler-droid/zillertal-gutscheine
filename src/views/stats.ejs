@@ -1,0 +1,26 @@
+<%- include('partials/header', { title: 'Statistik', active: 'stats' }) %>
+
+<div class="kpi-row">
+  <div class="kpi"><div class="value"><%= totals.gesamt %></div><div class="label">Gutscheine gesamt</div></div>
+  <div class="kpi"><div class="value"><%= totals.offen %></div><div class="label">Offen</div></div>
+  <div class="kpi accent"><div class="value"><%= totals.bezahlt %></div><div class="label">Bezahlt / gültig</div></div>
+  <div class="kpi"><div class="value"><%= Number(totals.offener_wert).toFixed(2) %> €</div><div class="label">Ausstehender Wert (bezahlt + eingelöst)</div></div>
+</div>
+
+<div class="card" style="padding:0;">
+  <table class="data-table">
+    <thead><tr><th>Gutscheinart</th><th>Anzahl</th><th>Davon eingelöst</th><th>Summe Wert (Wertgutscheine)</th></tr></thead>
+    <tbody>
+      <% byType.forEach(row => { %>
+        <tr>
+          <td><%= row.label %></td>
+          <td><%= row.anzahl %></td>
+          <td><%= row.eingeloest %></td>
+          <td><%= row.category === 'wert' ? Number(row.summe_wert).toFixed(2) + ' €' : '—' %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('partials/footer') %>

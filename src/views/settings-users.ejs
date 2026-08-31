@@ -1,0 +1,39 @@
+<%- include('partials/header', { title: 'Benutzer', active: 'users' }) %>
+
+<div style="display:grid; grid-template-columns: 1fr 340px; gap:20px; align-items:start;">
+  <div class="card" style="padding:0;">
+    <table class="data-table">
+      <thead><tr><th>Name</th><th>E-Mail</th><th>Rolle</th><th>Erstellt</th></tr></thead>
+      <tbody>
+        <% users.forEach(u => { %>
+          <tr>
+            <td><%= u.name %></td>
+            <td><%= u.email %></td>
+            <td><span class="badge <%= u.role === 'admin' ? 'badge-bezahlt' : 'badge-offen' %>"><%= u.role === 'admin' ? 'Admin' : 'Mitarbeiter' %></span></td>
+            <td><%= new Date(u.created_at).toLocaleDateString('de-AT') %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;">Neuen Benutzer anlegen</h3>
+    <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+    <form method="POST" action="/settings/users">
+      <div class="form-group"><label>Name</label><input type="text" name="name" required></div>
+      <div class="form-group"><label>E-Mail</label><input type="email" name="email" required></div>
+      <div class="form-group"><label>Passwort</label><input type="password" name="password" required minlength="6"></div>
+      <div class="form-group">
+        <label>Rolle</label>
+        <select name="role">
+          <option value="user">Mitarbeiter (User) — erstellen &amp; einlösen</option>
+          <option value="admin">Admin — voller Zugriff</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Anlegen</button>
+    </form>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

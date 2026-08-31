@@ -1,0 +1,51 @@
+<%- include('partials/header', { title: 'Gutschein ' + voucher.code, active: 'dashboard' }) %>
+
+<div style="display:grid; grid-template-columns: 1.1fr 1fr; gap: 24px; align-items:start;">
+  <div class="card">
+    <div class="page-header" style="margin-bottom:14px;">
+      <div>
+        <span class="badge badge-<%= voucher.status %>"><%= statusLabels[voucher.status] %></span>
+      </div>
+      <a href="/vouchers/<%= voucher.id %>/pdf" target="_blank" class="btn btn-secondary">PDF ansehen / drucken</a>
+    </div>
+
+    <table class="data-table" style="border:none;">
+      <tr><td style="border:none; color:var(--color-text-muted); width:180px;">Code</td><td style="border:none;"><code><%= voucher.code %></code></td></tr>
+      <tr><td style="border:none; color:var(--color-text-muted);">Art</td><td style="border:none;"><%= voucher.type_label %></td></tr>
+      <tr><td style="border:none; color:var(--color-text-muted);">Wert</td><td style="border:none;"><%= voucher.wert ? Number(voucher.wert).toFixed(2) + ' €' : '—' %></td></tr>
+      <tr><td style="border:none; color:var(--color-text-muted);">Leistung</td><td style="border:none;"><%= voucher.leistung_text || '—' %></td></tr>
+      <tr><td style="border:none; color:var(--color-text-muted);">Empfänger</td><td style="border:none;"><%= voucher.empfaenger_name || '—' %></td></tr>
+      <tr><td style="border:none; color:var(--color-text-muted);">Nachricht</td><td style="border:none;"><%= voucher.personal_message || '—' %></td></tr>
+      <tr><td style="border:none; color:var(--color-text-muted);">Gültig bis</td><td style="border:none;"><%= voucher.gueltig_bis ? new Date(voucher.gueltig_bis).toLocaleDateString('de-AT') : '—' %></td></tr>
+      <tr><td style="border:none; color:var(--color-text-muted);">Erstellt am</td><td style="border:none;"><%= new Date(voucher.created_at).toLocaleDateString('de-AT') %></td></tr>
+      <% if (voucher.paid_at) { %>
+      <tr><td style="border:none; color:var(--color-text-muted);">Bezahlt am</td><td style="border:none;"><%= new Date(voucher.paid_at).toLocaleDateString('de-AT') %></td></tr>
+      <% } %>
+      <% if (voucher.redeemed_at) { %>
+      <tr><td style="border:none; color:var(--color-text-muted);">Eingelöst am</td><td style="border:none;"><%= new Date(voucher.redeemed_at).toLocaleDateString('de-AT') %></td></tr>
+      <% } %>
+    </table>
+
+    <div style="display:flex; gap:10px; margin-top:20px; flex-wrap:wrap;">
+      <% if (voucher.status === 'offen') { %>
+        <form method="POST" action="/vouchers/<%= voucher.id %>/mark-paid">
+          <button class="btn btn-primary" type="submit">Als bezahlt markieren</button>
+        </form>
+      <% } %>
+      <% if (voucher.status === 'bezahlt') { %>
+        <a href="/redeem/<%= voucher.code %>" class="btn btn-primary">Jetzt einlösen</a>
+      <% } %>
+      <% if (voucher.status !== 'eingeloest' && voucher.status !== 'storniert') { %>
+        <form method="POST" action="/vouchers/<%= voucher.id %>/cancel" onsubmit="return confirm('Gutschein wirklich stornieren?');">
+          <button class="btn btn-danger" type="submit">Stornieren</button>
+        </form>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="voucher-preview-frame">
+    <iframe src="/vouchers/<%= voucher.id %>/pdf"></iframe>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> · Gutscheine · Zillertal Sports</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <%- include('sidebar', { active: typeof active !== 'undefined' ? active : '' }) %>
+    <div class="main">
+      <div class="topbar">
+        <div>
+          <h1><%= title %></h1>
+          <% if (typeof subtitle !== 'undefined' && subtitle) { %><div class="sub"><%= subtitle %></div><% } %>
+        </div>
+      </div>
+      <div class="content">

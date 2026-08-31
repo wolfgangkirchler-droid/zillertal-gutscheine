@@ -1,0 +1,30 @@
+<%- include('partials/header', { title: 'Gutschein einlösen', active: 'redeem' }) %>
+
+<div class="card" style="max-width: 480px;">
+  <div style="margin-bottom:14px;">
+    <span class="badge badge-<%= voucher.status %>">
+      <%= voucher.status === 'offen' ? 'Offen (noch nicht bezahlt)' : voucher.status === 'bezahlt' ? 'Bezahlt / gültig' : voucher.status === 'eingeloest' ? 'Bereits eingelöst' : 'Storniert' %>
+    </span>
+  </div>
+
+  <h2 style="margin:0 0 4px;"><%= voucher.type_label %></h2>
+  <p style="color:var(--color-text-muted); margin:0 0 4px;">Code: <code><%= voucher.code %></code></p>
+  <% if (voucher.empfaenger_name) { %><p style="margin:0 0 16px;">Für: <strong><%= voucher.empfaenger_name %></strong></p><% } %>
+
+  <% if (voucher.status === 'bezahlt') { %>
+    <form method="POST" action="/redeem/<%= voucher.code %>/confirm">
+      <button type="submit" class="btn btn-primary btn-block">Jetzt als eingelöst bestätigen</button>
+    </form>
+  <% } else if (voucher.status === 'offen') { %>
+    <div class="alert alert-error">Dieser Gutschein ist noch nicht als bezahlt markiert und kann daher nicht eingelöst werden.</div>
+    <a href="/vouchers/<%= voucher.id %>" class="btn btn-secondary btn-block">Zum Gutschein</a>
+  <% } else if (voucher.status === 'eingeloest') { %>
+    <div class="alert alert-error">Dieser Gutschein wurde bereits eingelöst<%= voucher.redeemed_at ? ' am ' + new Date(voucher.redeemed_at).toLocaleDateString('de-AT') : '' %>.</div>
+  <% } else { %>
+    <div class="alert alert-error">Dieser Gutschein wurde storniert und ist nicht mehr gültig.</div>
+  <% } %>
+
+  <a href="/redeem" class="btn btn-secondary btn-block" style="margin-top:10px;">Anderen Code suchen</a>
+</div>
+
+<%- include('partials/footer') %>

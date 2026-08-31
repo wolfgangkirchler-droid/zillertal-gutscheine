@@ -1,0 +1,45 @@
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    ZILLERTAL SPORTS
+    <span>Gutschein-Verwaltung</span>
+  </div>
+
+  <a href="/" class="nav-link <%= active === 'dashboard' ? 'active' : '' %>">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+    Dashboard
+  </a>
+  <a href="/vouchers/new" class="nav-link <%= active === 'new' ? 'active' : '' %>">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+    Neuer Gutschein
+  </a>
+  <a href="/redeem" class="nav-link <%= active === 'redeem' ? 'active' : '' %>">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20v.01"/></svg>
+    Einlösen
+  </a>
+
+  <% if (currentUser && currentUser.role === 'admin') { %>
+    <div class="nav-section-label">Verwaltung</div>
+    <a href="/settings/voucher-types" class="nav-link <%= active === 'voucher-types' ? 'active' : '' %>">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1 1.55V21a2 2 0 11-4 0v-.09A1.7 1.7 0 008.6 19.4a1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.7 1.7 0 004.6 15a1.7 1.7 0 00-1.55-1H3a2 2 0 110-4h.09A1.7 1.7 0 004.6 8.6a1.7 1.7 0 00-.34-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06A1.7 1.7 0 008.6 4.6a1.7 1.7 0 001-1.55V3a2 2 0 114 0v.09A1.7 1.7 0 0015 4.6a1.7 1.7 0 001.87-.34l.06-.06a2 2 0 112.83 2.83l-.06.06A1.7 1.7 0 0019.4 8.6a1.7 1.7 0 001.55 1H21a2 2 0 110 4h-.09a1.7 1.7 0 00-1.51 1z"/></svg>
+      Gutscheinarten
+    </a>
+    <a href="/settings/users" class="nav-link <%= active === 'users' ? 'active' : '' %>">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      Benutzer
+    </a>
+    <a href="/stats" class="nav-link <%= active === 'stats' ? 'active' : '' %>">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-4"/></svg>
+      Statistik
+    </a>
+  <% } %>
+
+  <div class="sidebar-spacer"></div>
+
+  <div class="sidebar-user">
+    <span class="name"><%= currentUser.name %></span>
+    <span class="role"><%= currentUser.role === 'admin' ? 'Admin' : 'Mitarbeiter' %></span>
+    <form action="/logout" method="POST">
+      <button class="logout-btn" type="submit">Abmelden</button>
+    </form>
+  </div>
+</aside>

@@ -1,0 +1,141 @@
+const fs = require('fs');
+const path = require('path');
+const PDFDocument = require('pdfkit');
+const { generateVoucherQr } = require('./qrcode');
+
+const IMAGES_DIR = path.join(__dirname, '..', '..', 'public', 'images', 'vouchers');
+const LOGO_PATH = path.join(__dirname, '..', '..', 'public', 'images', 'logo', 'logo.png');
+
+const PAGE_WIDTH = 841.89;  // A4 quer
+const PAGE_HEIGHT = 595.28;
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' }).format(value);
+}
+
+function formatDate(date) {
+  if (!date) return null;
+  return new Intl.DateTimeFormat('de-AT').format(new Date(date));
+}
+
+/**
+ * Baut das Gutschein-PDF und schreibt es in den übergebenen Stream (z.B. res).
+ * `voucher` enthält die DB-Zeile aus `vouchers`, `voucherType` die zugehörige
+ * Zeile aus `voucher_types`, `baseUrl` wird für den QR-Code-Link gebraucht.
+ */
+async function renderVoucherPdf({ voucher, voucherType, baseUrl }, outputStream) {
+  const doc = new PDFDocument({ size: [PAGE_WIDTH, PAGE_HEIGHT], margin: 0 });
+  doc.pipe(outputStream);
+
+  const accent = voucherType.accent_color || '#0EA5A5';
+  const bgImagePath = path.join(IMAGES_DIR, voucherType.background_image || '');
+  const hasBgImage = voucherType.background_image && fs.existsSync(bgImagePath);
+
+  // --- Hintergrund ---
+  if (hasBgImage) {
+    doc.image(bgImagePath, 0, 0, { cover: [PAGE_WIDTH, PAGE_HEIGHT], align: 'center', valign: 'center' });
+  } else {
+    doc.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT).fill(accent);
+  }
+
+  // Dunkles Verlaufs-Panel links, damit der Text auf jedem Foto lesbar bleibt
+  const panelWidth = PAGE_WIDTH * 0.46;
+  const gradient = doc.linearGradient(0, 0, panelWidth, 0);
+  gradient.stop(0, '#0B0B0BFF').stop(0.75, '#0B0B0BE0').stop(1, '#0B0B0B00');
+  doc.rect(0, 0, panelWidth, PAGE_HEIGHT).fill(gradient);
+
+  // Dünner Akzentbalken oben
+  doc.rect(0, 0, PAGE_WIDTH, 6).fill(accent);
+
+  const marginX = 48;
+  let cursorY = 56;
+
+  // --- Logo / Wortmarke ---
+  if (fs.existsSync(LOGO_PATH)) {
+    doc.image(LOGO_PATH, marginX, cursorY, { height: 34 });
+    cursorY += 34 + 28;
+  } else {
+    doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(14)
+      .text('ZILLERTAL SPORTS', marginX, cursorY, { characterSpacing: 1.5 });
+    cursorY += 14 + 30;
+  }
+
+  // --- "GUTSCHEIN" Eyebrow ---
+  doc.fillColor(accent).font('Helvetica-Bold').fontSize(12)
+    .text('GUTSCHEIN', marginX, cursorY, { characterSpacing: 2 });
+  cursorY += 22;
+
+  // --- Titel (Gutscheinart) ---
+  doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(30)
+    .text(voucherType.label, marginX, cursorY, { width: panelWidth - marginX - 24 });
+  cursorY = doc.y + 16;
+
+  // --- Wert bzw. Leistung ---
+  doc.font('Helvetica-Bold').fontSize(22).fillColor(accent);
+  if (voucherType.category === 'wert') {
+    doc.text(formatCurrency(voucher.wert), marginX, cursorY);
+    cursorY = doc.y + 14;
+  } else {
+    const leistung = voucher.leistung_text || voucherType.default_leistung || '';
+    doc.fontSize(14).fillColor('#F2F2F2').font('Helvetica')
+      .text(leistung, marginX, cursorY, { width: panelWidth - marginX - 24, lineGap: 3 });
+    cursorY = doc.y + 14;
+    if (voucher.wert) {
+      doc.font('Helvetica-Bold').fontSize(16).fillColor(accent)
+        .text(formatCurrency(voucher.wert), marginX, cursorY);
+      cursorY = doc.y + 14;
+    }
+  }
+
+  // --- Personalisierung ---
+  if (voucher.empfaenger_name) {
+    cursorY += 10;
+    doc.font('Helvetica').fontSize(11).fillColor('#CCCCCC')
+      .text('Für', marginX, cursorY, { characterSpacing: 1 });
+    cursorY = doc.y + 2;
+    doc.font('Helvetica-Bold').fontSize(16).fillColor('#FFFFFF')
+      .text(voucher.empfaenger_name, marginX, cursorY);
+    cursorY = doc.y + 10;
+  }
+  if (voucher.personal_message) {
+    doc.font('Helvetica-Oblique').fontSize(11).fillColor('#DDDDDD')
+      .text(`„${voucher.personal_message}"`, marginX, cursorY, { width: panelWidth - marginX - 24, lineGap: 2 });
+    cursorY = doc.y + 10;
+  }
+
+  // --- Fußbereich: Code, Gültigkeit, QR-Code ---
+  const footerY = PAGE_HEIGHT - 120;
+
+  doc.font('Helvetica').fontSize(9).fillColor('#BBBBBB')
+    .text('GUTSCHEIN-CODE', marginX, footerY, { characterSpacing: 1.5 });
+  doc.font('Helvetica-Bold').fontSize(15).fillColor('#FFFFFF')
+    .text(voucher.code, marginX, footerY + 13);
+
+  if (voucher.gueltig_bis) {
+    doc.font('Helvetica').fontSize(9).fillColor('#BBBBBB')
+      .text('GÜLTIG BIS', marginX, footerY + 42, { characterSpacing: 1.5 });
+    doc.font('Helvetica-Bold').fontSize(12).fillColor('#FFFFFF')
+      .text(formatDate(voucher.gueltig_bis), marginX, footerY + 55);
+  }
+
+  // QR-Code unten rechts im dunklen Panel
+  const qrSize = 92;
+  const qrBuffer = await generateVoucherQr(voucher.code, baseUrl);
+  const qrX = panelWidth - qrSize - 40;
+  const qrY = PAGE_HEIGHT - qrSize - 40;
+  doc.roundedRect(qrX - 8, qrY - 8, qrSize + 16, qrSize + 16, 6).fill('#FFFFFF');
+  doc.image(qrBuffer, qrX, qrY, { width: qrSize, height: qrSize });
+  doc.font('Helvetica').fontSize(7.5).fillColor('#BBBBBB')
+    .text('Am Spieljoch einlösen', qrX - 8, qrY + qrSize + 12, { width: qrSize + 16, align: 'center' });
+
+  // --- Kontaktzeile unten über die volle Breite ---
+  doc.font('Helvetica').fontSize(9).fillColor('#FFFFFF')
+    .text(
+      'Zillertal Sports  ·  Spieljochbahn, 6263 Fügen  ·  +43 5288 20222  ·  info@zillertal-sports.com',
+      marginX, PAGE_HEIGHT - 28, { width: PAGE_WIDTH - marginX * 2 }
+    );
+
+  doc.end();
+}
+
+module.exports = { renderVoucherPdf };

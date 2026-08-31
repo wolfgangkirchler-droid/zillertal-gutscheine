@@ -1,0 +1,62 @@
+<%- include('partials/header', { title: 'Dashboard', active: 'dashboard' }) %>
+
+<div class="kpi-row">
+  <div class="kpi"><div class="value"><%= statusCounts.offen %></div><div class="label">Offen (unbezahlt)</div></div>
+  <div class="kpi accent"><div class="value"><%= statusCounts.bezahlt %></div><div class="label">Bezahlt &amp; gültig</div></div>
+  <div class="kpi"><div class="value"><%= statusCounts.eingeloest %></div><div class="label">Eingelöst</div></div>
+  <div class="kpi"><div class="value"><%= statusCounts.storniert %></div><div class="label">Storniert</div></div>
+</div>
+
+<div class="page-header">
+  <form class="filter-bar" method="GET" action="/">
+    <input type="text" name="q" placeholder="Code oder Name suchen…" value="<%= filters.q %>">
+    <select name="status">
+      <option value="">Alle Status</option>
+      <option value="offen" <%= filters.status === 'offen' ? 'selected' : '' %>>Offen</option>
+      <option value="bezahlt" <%= filters.status === 'bezahlt' ? 'selected' : '' %>>Bezahlt / gültig</option>
+      <option value="eingeloest" <%= filters.status === 'eingeloest' ? 'selected' : '' %>>Eingelöst</option>
+      <option value="storniert" <%= filters.status === 'storniert' ? 'selected' : '' %>>Storniert</option>
+    </select>
+    <select name="type">
+      <option value="">Alle Arten</option>
+      <% voucherTypes.forEach(vt => { %>
+        <option value="<%= vt.key %>" <%= filters.type === vt.key ? 'selected' : '' %>><%= vt.label %></option>
+      <% }) %>
+    </select>
+    <button type="submit" class="btn btn-secondary">Filtern</button>
+  </form>
+  <a href="/vouchers/new" class="btn btn-primary">+ Neuer Gutschein</a>
+</div>
+
+<div class="card" style="padding:0;">
+  <% if (vouchers.length === 0) { %>
+    <div class="empty-state">Keine Gutscheine gefunden.</div>
+  <% } else { %>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Art</th>
+        <th>Empfänger</th>
+        <th>Wert</th>
+        <th>Status</th>
+        <th>Erstellt</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% vouchers.forEach(v => { %>
+        <tr onclick="window.location='/vouchers/<%= v.id %>'" style="cursor:pointer;">
+          <td><code><%= v.code %></code></td>
+          <td><%= v.type_label %></td>
+          <td><%= v.empfaenger_name || '—' %></td>
+          <td><%= v.wert ? Number(v.wert).toFixed(2) + ' €' : '—' %></td>
+          <td><span class="badge badge-<%= v.status %>"><%= statusLabels[v.status] %></span></td>
+          <td><%= new Date(v.created_at).toLocaleDateString('de-AT') %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,17 @@
+<%- include('partials/header', { title: 'Gutschein einlösen', active: 'redeem' }) %>
+
+<div class="card" style="max-width: 460px;">
+  <p style="color:var(--color-text-muted); margin-top:0;">
+    Gutschein-Code eingeben oder den QR-Code auf dem Gutschein scannen.
+  </p>
+  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+  <form method="POST" action="/redeem">
+    <div class="form-group">
+      <label for="code">Gutschein-Code</label>
+      <input type="text" id="code" name="code" placeholder="z.B. A7K2N9P4" required autofocus style="text-transform:uppercase;">
+    </div>
+    <button type="submit" class="btn btn-primary btn-block">Gutschein suchen</button>
+  </form>
+</div>
+
+<%- include('partials/footer') %>

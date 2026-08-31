@@ -1,0 +1,40 @@
+<%- include('partials/header', { title: 'Gutscheinarten', active: 'voucher-types', subtitle: 'Preise, Texte und Design-Hintergründe pro Gutscheinart' }) %>
+
+<% if (saved) { %><div class="alert alert-success">Änderungen gespeichert.</div><% } %>
+
+<% voucherTypes.forEach(vt => { %>
+  <div class="card" style="margin-bottom:16px;">
+    <form method="POST" action="/settings/voucher-types/<%= vt.id %>">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Bezeichnung</label>
+          <input type="text" name="label" value="<%= vt.label %>">
+        </div>
+        <div class="form-group">
+          <label>Preis <span class="hint">(Vorschlagswert, € — leer bei reinem Wertgutschein)</span></label>
+          <input type="number" step="0.01" name="default_price" value="<%= vt.default_price || '' %>">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Standard-Leistungsbeschreibung</label>
+        <textarea name="default_leistung"><%= vt.default_leistung || '' %></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Hintergrundbild-Datei <span class="hint">(in public/images/vouchers/)</span></label>
+          <input type="text" name="background_image" value="<%= vt.background_image %>">
+        </div>
+        <div class="form-group">
+          <label>Akzentfarbe</label>
+          <input type="text" name="accent_color" value="<%= vt.accent_color %>">
+        </div>
+      </div>
+      <div class="form-group">
+        <label><input type="checkbox" name="active" <%= vt.active ? 'checked' : '' %> style="width:auto; display:inline-block; margin-right:6px;">Aktiv (bei Neuerstellung auswählbar)</label>
+      </div>
+      <button type="submit" class="btn btn-primary">Speichern</button>
+    </form>
+  </div>
+<% }) %>
+
+<%- include('partials/footer') %>
