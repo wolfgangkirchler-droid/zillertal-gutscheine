@@ -10,7 +10,8 @@ router.use(requireAdmin);
 // Bilder werden im Arbeitsspeicher gehalten und direkt in die Datenbank
 // geschrieben (nicht auf die Server-Festplatte, die bei jedem Deploy
 // zurückgesetzt wird) – so gehen hochgeladene Bilder nie verloren.
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+// Limit auf 20 MB angehoben, damit auch unbearbeitete Handy-Fotos passen.
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
 function slugify(text) {
   return text

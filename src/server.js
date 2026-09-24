@@ -4,6 +4,7 @@ const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
 const methodOverride = require('method-override');
 const path = require('path');
+const multer = require('multer');
 const pool = require('./db');
 const { attachUser } = require('./middleware/auth');
 
@@ -53,6 +54,14 @@ app.use((req, res) => {
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   console.error(err);
+
+  if (err instanceof multer.MulterError && err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(413).render('error', {
+      title: 'Datei zu groß',
+      message: 'Das hochgeladene Bild ist größer als 20 MB. Bitte ein kleineres Foto wählen (z.B. am Handy vor dem Hochladen verkleinern) und erneut versuchen.'
+    });
+  }
+
   res.status(500).render('error', { title: 'Fehler', message: 'Etwas ist schiefgelaufen. Bitte erneut versuchen.' });
 });
 
