@@ -48,11 +48,16 @@ CREATE TABLE IF NOT EXISTS voucher_types (
   sort_order          INT NOT NULL DEFAULT 0
 );
 
--- Additive Erweiterung für bereits existierende Installationen: neue Spalte,
+-- Additive Erweiterung für bereits existierende Installationen: neue Spalten,
 -- alte Daten/Zeilen bleiben unangetastet.
 ALTER TABLE voucher_types ADD COLUMN IF NOT EXISTS company_id INT REFERENCES companies(id);
 ALTER TABLE voucher_types ADD COLUMN IF NOT EXISTS background_data BYTEA;
 ALTER TABLE voucher_types ADD COLUMN IF NOT EXISTS background_mimetype VARCHAR(50);
+-- WICHTIG: Auf einer schon bestehenden Installation war background_image
+-- ein Pflichtfeld (NOT NULL). Das lässt sich nicht durch eine geänderte
+-- CREATE-TABLE-Definition rückwirkend ändern (die wird bei einer schon
+-- existierenden Tabelle gar nicht mehr ausgeführt) – deshalb hier explizit:
+ALTER TABLE voucher_types ALTER COLUMN background_image DROP NOT NULL;
 
 CREATE TABLE IF NOT EXISTS vouchers (
   id                SERIAL PRIMARY KEY,
