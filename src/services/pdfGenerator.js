@@ -38,14 +38,25 @@ async function renderVoucherPdf({ voucher, voucherType, baseUrl }, outputStream)
     doc.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT).fill(accent);
   }
 
-  // Dunkles Verlaufs-Panel links, damit der Text auf jedem Foto lesbar bleibt
+  // Dunkles Verlaufs-Panel links, damit der Text auf jedem Foto lesbar bleibt.
+  // WICHTIG: Transparenz muss über den 3. .stop()-Parameter (opacity, 0–1)
+  // gesetzt werden, NICHT als 8-stelliger Hex-Code (#RRGGBBAA) – das
+  // unterstützt PDFKit nicht und rendert stattdessen eine falsche Farbe.
   const panelWidth = PAGE_WIDTH * 0.46;
   const gradient = doc.linearGradient(0, 0, panelWidth, 0);
-  gradient.stop(0, '#0B0B0BFF').stop(0.75, '#0B0B0BE0').stop(1, '#0B0B0B00');
+  gradient
+    .stop(0, '#0B0B0B', 1)
+    .stop(0.75, '#0B0B0B', 0.88)
+    .stop(1, '#0B0B0B', 0);
   doc.rect(0, 0, panelWidth, PAGE_HEIGHT).fill(gradient);
 
   // Dünner Akzentbalken oben
   doc.rect(0, 0, PAGE_WIDTH, 6).fill(accent);
+
+  // Durchgehender dunkler Fußbalken über die volle Breite, damit die
+  // Kontaktzeile unten auch über dem hellen Foto rechts lesbar bleibt.
+  const footerBarHeight = 34;
+  doc.rect(0, PAGE_HEIGHT - footerBarHeight, PAGE_WIDTH, footerBarHeight).fill('#0B0B0B');
 
   const marginX = 48;
   let cursorY = 56;
@@ -122,17 +133,17 @@ async function renderVoucherPdf({ voucher, voucherType, baseUrl }, outputStream)
   const qrSize = 92;
   const qrBuffer = await generateVoucherQr(voucher.code, baseUrl);
   const qrX = panelWidth - qrSize - 40;
-  const qrY = PAGE_HEIGHT - qrSize - 40;
+  const qrY = PAGE_HEIGHT - qrSize - 48;
   doc.roundedRect(qrX - 8, qrY - 8, qrSize + 16, qrSize + 16, 6).fill('#FFFFFF');
   doc.image(qrBuffer, qrX, qrY, { width: qrSize, height: qrSize });
   doc.font('Helvetica').fontSize(7.5).fillColor('#BBBBBB')
     .text('Am Spieljoch einlösen', qrX - 8, qrY + qrSize + 12, { width: qrSize + 16, align: 'center' });
 
-  // --- Kontaktzeile unten über die volle Breite ---
+  // --- Kontaktzeile unten über die volle Breite (auf dem Fußbalken) ---
   doc.font('Helvetica').fontSize(9).fillColor('#FFFFFF')
     .text(
       'Zillertal Sports  ·  Spieljochbahn, 6263 Fügen  ·  +43 5288 20222  ·  info@zillertal-sports.com',
-      marginX, PAGE_HEIGHT - 28, { width: PAGE_WIDTH - marginX * 2 }
+      marginX, PAGE_HEIGHT - 22, { width: PAGE_WIDTH - marginX * 2 }
     );
 
   doc.end();
