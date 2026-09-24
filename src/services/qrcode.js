@@ -1,10 +1,5 @@
 const QRCode = require('qrcode');
 
-/**
- * Erzeugt einen QR-Code als PNG-Buffer für den gegebenen Gutschein-Code.
- * Der QR-Code kodiert die Einlöse-URL, sodass ein Scan direkt auf die
- * Einlöse-Seite dieses Gutscheins springt.
- */
 async function generateVoucherQr(code, baseUrl) {
   const redeemUrl = `${baseUrl}/redeem/${code}`;
   return QRCode.toBuffer(redeemUrl, {

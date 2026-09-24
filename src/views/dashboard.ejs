@@ -36,6 +36,7 @@
     <thead>
       <tr>
         <th>Code</th>
+        <th>Unternehmen</th>
         <th>Art</th>
         <th>Empfänger</th>
         <th>Wert</th>
@@ -47,6 +48,7 @@
       <% vouchers.forEach(v => { %>
         <tr onclick="window.location='/vouchers/<%= v.id %>'" style="cursor:pointer;">
           <td><code><%= v.code %></code></td>
+          <td><%= v.company_name || '—' %></td>
           <td><%= v.type_label %></td>
           <td><%= v.empfaenger_name || '—' %></td>
           <td><%= v.wert ? Number(v.wert).toFixed(2) + ' €' : '—' %></td>

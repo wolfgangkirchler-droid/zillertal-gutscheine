@@ -4,7 +4,9 @@ const PDFDocument = require('pdfkit');
 const { generateVoucherQr } = require('./qrcode');
 
 const IMAGES_DIR = path.join(__dirname, '..', '..', 'public', 'images', 'vouchers');
-const LOGO_PATH = path.join(__dirname, '..', '..', 'public', 'images', 'logo', 'logo.png');
+// Legacy-Fallback: das ursprüngliche Zillertal-Sports-Logo, falls für ein
+// Unternehmen (noch) kein Logo in der Datenbank hochgeladen wurde.
+const LEGACY_LOGO_PATH = path.join(__dirname, '..', '..', 'public', 'images', 'logo', 'logo.png');
 
 const PAGE_WIDTH = 841.89;  // A4 quer
 const PAGE_HEIGHT = 595.28;
@@ -20,28 +22,33 @@ function formatDate(date) {
 
 /**
  * Baut das Gutschein-PDF und schreibt es in den übergebenen Stream (z.B. res).
- * `voucher` enthält die DB-Zeile aus `vouchers`, `voucherType` die zugehörige
- * Zeile aus `voucher_types`, `baseUrl` wird für den QR-Code-Link gebraucht.
+ * `voucher` = Zeile aus `vouchers`, `voucherType` = Zeile aus `voucher_types`,
+ * `company` = zugehörige Zeile aus `companies` (kann null sein, dann greifen
+ * Fallbacks), `baseUrl` wird für den QR-Code-Link gebraucht.
  */
-async function renderVoucherPdf({ voucher, voucherType, baseUrl }, outputStream) {
+async function renderVoucherPdf({ voucher, voucherType, company, baseUrl }, outputStream) {
   const doc = new PDFDocument({ size: [PAGE_WIDTH, PAGE_HEIGHT], margin: 0 });
   doc.pipe(outputStream);
 
   const accent = voucherType.accent_color || '#0EA5A5';
-  const bgImagePath = path.join(IMAGES_DIR, voucherType.background_image || '');
-  const hasBgImage = voucherType.background_image && fs.existsSync(bgImagePath);
 
-  // --- Hintergrund ---
-  if (hasBgImage) {
-    doc.image(bgImagePath, 0, 0, { cover: [PAGE_WIDTH, PAGE_HEIGHT], align: 'center', valign: 'center' });
+  // --- Hintergrundbild bestimmen: Upload aus der DB bevorzugt, sonst
+  // Legacy-Datei vom Server, sonst einfarbige Fläche in der Akzentfarbe ---
+  let bgSource = null;
+  if (voucherType.background_data) {
+    bgSource = voucherType.background_data; // Buffer aus der DB
+  } else if (voucherType.background_image) {
+    const legacyPath = path.join(IMAGES_DIR, voucherType.background_image);
+    if (fs.existsSync(legacyPath)) bgSource = legacyPath;
+  }
+
+  if (bgSource) {
+    doc.image(bgSource, 0, 0, { cover: [PAGE_WIDTH, PAGE_HEIGHT], align: 'center', valign: 'center' });
   } else {
     doc.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT).fill(accent);
   }
 
   // Dunkles Verlaufs-Panel links, damit der Text auf jedem Foto lesbar bleibt.
-  // WICHTIG: Transparenz muss über den 3. .stop()-Parameter (opacity, 0–1)
-  // gesetzt werden, NICHT als 8-stelliger Hex-Code (#RRGGBBAA) – das
-  // unterstützt PDFKit nicht und rendert stattdessen eine falsche Farbe.
   const panelWidth = PAGE_WIDTH * 0.46;
   const gradient = doc.linearGradient(0, 0, panelWidth, 0);
   gradient
@@ -61,13 +68,23 @@ async function renderVoucherPdf({ voucher, voucherType, baseUrl }, outputStream)
   const marginX = 48;
   let cursorY = 56;
 
-  // --- Logo / Wortmarke ---
-  if (fs.existsSync(LOGO_PATH)) {
-    doc.image(LOGO_PATH, marginX, cursorY, { height: 34 });
-    cursorY += 34 + 28;
+  // --- Logo / Wortmarke: Unternehmens-Logo aus DB, sonst Legacy-Datei,
+  // sonst Firmenname als Text ---
+  const logoHeight = 54;
+  let logoSource = null;
+  if (company && company.logo_data) {
+    logoSource = company.logo_data;
+  } else if (fs.existsSync(LEGACY_LOGO_PATH)) {
+    logoSource = LEGACY_LOGO_PATH;
+  }
+
+  if (logoSource) {
+    doc.image(logoSource, marginX, cursorY, { height: logoHeight });
+    cursorY += logoHeight + 22;
   } else {
+    const companyName = (company && company.name) ? company.name.toUpperCase() : 'ZILLERTAL SPORTS';
     doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(14)
-      .text('ZILLERTAL SPORTS', marginX, cursorY, { characterSpacing: 1.5 });
+      .text(companyName, marginX, cursorY, { characterSpacing: 1.5 });
     cursorY += 14 + 30;
   }
 
@@ -137,14 +154,14 @@ async function renderVoucherPdf({ voucher, voucherType, baseUrl }, outputStream)
   doc.roundedRect(qrX - 8, qrY - 8, qrSize + 16, qrSize + 16, 6).fill('#FFFFFF');
   doc.image(qrBuffer, qrX, qrY, { width: qrSize, height: qrSize });
   doc.font('Helvetica').fontSize(7.5).fillColor('#BBBBBB')
-    .text('Am Spieljoch einlösen', qrX - 8, qrY + qrSize + 12, { width: qrSize + 16, align: 'center' });
+    .text('Einlösen vor Ort', qrX - 8, qrY + qrSize + 12, { width: qrSize + 16, align: 'center' });
 
   // --- Kontaktzeile unten über die volle Breite (auf dem Fußbalken) ---
+  const footerText = (company && company.footer_text)
+    ? company.footer_text
+    : 'Zillertal Sports  ·  Spieljochbahn, 6263 Fügen  ·  +43 5288 20222  ·  info@zillertal-sports.com';
   doc.font('Helvetica').fontSize(9).fillColor('#FFFFFF')
-    .text(
-      'Zillertal Sports  ·  Spieljochbahn, 6263 Fügen  ·  +43 5288 20222  ·  info@zillertal-sports.com',
-      marginX, PAGE_HEIGHT - 22, { width: PAGE_WIDTH - marginX * 2 }
-    );
+    .text(footerText, marginX, PAGE_HEIGHT - 22, { width: PAGE_WIDTH - marginX * 2 });
 
   doc.end();
 }

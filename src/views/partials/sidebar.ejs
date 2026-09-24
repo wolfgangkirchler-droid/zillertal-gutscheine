@@ -1,7 +1,7 @@
 <aside class="sidebar">
   <div class="sidebar-brand">
-    ZILLERTAL SPORTS
-    <span>Gutschein-Verwaltung</span>
+    GUTSCHEIN-VERWALTUNG
+    <span>Zillertal Sports · skiCHECK</span>
   </div>
 
   <a href="/" class="nav-link <%= active === 'dashboard' ? 'active' : '' %>">
@@ -19,6 +19,10 @@
 
   <% if (currentUser && currentUser.role === 'admin') { %>
     <div class="nav-section-label">Verwaltung</div>
+    <a href="/settings/companies" class="nav-link <%= active === 'companies' ? 'active' : '' %>">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+      Unternehmen
+    </a>
     <a href="/settings/voucher-types" class="nav-link <%= active === 'voucher-types' ? 'active' : '' %>">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1 1.55V21a2 2 0 11-4 0v-.09A1.7 1.7 0 008.6 19.4a1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.7 1.7 0 004.6 15a1.7 1.7 0 00-1.55-1H3a2 2 0 110-4h.09A1.7 1.7 0 004.6 8.6a1.7 1.7 0 00-.34-1.87l-.06-.06a2 2 0 112.83-2.83l.06.06A1.7 1.7 0 008.6 4.6a1.7 1.7 0 001-1.55V3a2 2 0 114 0v.09A1.7 1.7 0 0015 4.6a1.7 1.7 0 001.87-.34l.06-.06a2 2 0 112.83 2.83l-.06.06A1.7 1.7 0 0019.4 8.6a1.7 1.7 0 001.55 1H21a2 2 0 110 4h-.09a1.7 1.7 0 00-1.51 1z"/></svg>
       Gutscheinarten

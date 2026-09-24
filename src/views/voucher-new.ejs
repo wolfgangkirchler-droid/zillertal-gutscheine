@@ -8,14 +8,26 @@
       <label for="voucher_type_id">Gutscheinart</label>
       <select id="voucher_type_id" name="voucher_type_id" required>
         <option value="">Bitte wählen…</option>
-        <% voucherTypes.forEach(vt => { %>
-          <option
-            value="<%= vt.id %>"
-            data-category="<%= vt.category %>"
-            data-price="<%= vt.default_price || '' %>"
-            data-leistung="<%= vt.default_leistung || '' %>"
-            <%= (formData.voucher_type_id == vt.id) ? 'selected' : '' %>
-          ><%= vt.label %></option>
+        <%
+          const groups = {};
+          voucherTypes.forEach(vt => {
+            const g = vt.company_name || 'Ohne Unternehmen';
+            if (!groups[g]) groups[g] = [];
+            groups[g].push(vt);
+          });
+        %>
+        <% Object.keys(groups).forEach(groupName => { %>
+          <optgroup label="<%= groupName %>">
+            <% groups[groupName].forEach(vt => { %>
+              <option
+                value="<%= vt.id %>"
+                data-category="<%= vt.category %>"
+                data-price="<%= vt.default_price || '' %>"
+                data-leistung="<%= vt.default_leistung || '' %>"
+                <%= (formData.voucher_type_id == vt.id) ? 'selected' : '' %>
+              ><%= vt.label %></option>
+            <% }) %>
+          </optgroup>
         <% }) %>
       </select>
     </div>
@@ -52,8 +64,6 @@
 </div>
 
 <script>
-  // Beim Wechsel der Gutscheinart Vorschlagswerte (Preis/Leistungstext) übernehmen,
-  // solange das Feld vom Nutzer noch nicht manuell verändert wurde.
   const select = document.getElementById('voucher_type_id');
   const wertField = document.getElementById('wert');
   const leistungField = document.getElementById('leistung_text');

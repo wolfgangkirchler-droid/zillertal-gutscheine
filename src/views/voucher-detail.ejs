@@ -11,6 +11,7 @@
 
     <table class="data-table" style="border:none;">
       <tr><td style="border:none; color:var(--color-text-muted); width:180px;">Code</td><td style="border:none;"><code><%= voucher.code %></code></td></tr>
+      <tr><td style="border:none; color:var(--color-text-muted);">Unternehmen</td><td style="border:none;"><%= voucher.company_name || '—' %></td></tr>
       <tr><td style="border:none; color:var(--color-text-muted);">Art</td><td style="border:none;"><%= voucher.type_label %></td></tr>
       <tr><td style="border:none; color:var(--color-text-muted);">Wert</td><td style="border:none;"><%= voucher.wert ? Number(voucher.wert).toFixed(2) + ' €' : '—' %></td></tr>
       <tr><td style="border:none; color:var(--color-text-muted);">Leistung</td><td style="border:none;"><%= voucher.leistung_text || '—' %></td></tr>

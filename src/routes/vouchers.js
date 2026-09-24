@@ -6,7 +6,6 @@ const { renderVoucherPdf } = require('../services/pdfGenerator');
 
 const router = express.Router();
 
-// Ohne verwechselbare Zeichen (0/O, 1/I) – leichter am Telefon vorzulesen
 const generateCode = customAlphabet('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', 8);
 
 const STATUS_LABELS = {
@@ -40,9 +39,10 @@ router.get('/', async (req, res) => {
   const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
   const { rows: vouchers } = await pool.query(
-    `SELECT v.*, vt.label AS type_label, vt.category, vt.accent_color
+    `SELECT v.*, vt.label AS type_label, vt.category, vt.accent_color, c.name AS company_name
      FROM vouchers v
      JOIN voucher_types vt ON vt.id = v.voucher_type_id
+     LEFT JOIN companies c ON c.id = vt.company_id
      ${where}
      ORDER BY v.created_at DESC
      LIMIT 200`,
@@ -71,7 +71,11 @@ router.get('/', async (req, res) => {
 // --- Neuer Gutschein: Formular ---
 router.get('/vouchers/new', async (req, res) => {
   const { rows: voucherTypes } = await pool.query(
-    'SELECT * FROM voucher_types WHERE active = true ORDER BY sort_order'
+    `SELECT vt.*, c.name AS company_name
+     FROM voucher_types vt
+     LEFT JOIN companies c ON c.id = vt.company_id
+     WHERE vt.active = true
+     ORDER BY c.sort_order NULLS LAST, vt.sort_order`
   );
   res.render('voucher-new', { voucherTypes, error: null, formData: {} });
 });
@@ -80,14 +84,17 @@ router.get('/vouchers/new', async (req, res) => {
 router.post('/vouchers', async (req, res) => {
   const { voucher_type_id, wert, leistung_text, empfaenger_name, personal_message, gueltig_bis } = req.body;
 
-  const { rows: voucherTypes } = await pool.query(
-    'SELECT * FROM voucher_types WHERE active = true ORDER BY sort_order'
-  );
+  const { rows: voucherTypes } = await pool.query('SELECT * FROM voucher_types WHERE active = true');
   const voucherType = voucherTypes.find((t) => t.id === parseInt(voucher_type_id, 10));
 
   if (!voucherType) {
+    const { rows: vtWithCompany } = await pool.query(
+      `SELECT vt.*, c.name AS company_name FROM voucher_types vt
+       LEFT JOIN companies c ON c.id = vt.company_id
+       WHERE vt.active = true ORDER BY c.sort_order NULLS LAST, vt.sort_order`
+    );
     return res.status(400).render('voucher-new', {
-      voucherTypes, error: 'Bitte eine gültige Gutscheinart wählen.', formData: req.body
+      voucherTypes: vtWithCompany, error: 'Bitte eine gültige Gutscheinart wählen.', formData: req.body
     });
   }
 
@@ -109,8 +116,13 @@ router.post('/vouchers', async (req, res) => {
     res.redirect(`/vouchers/${rows[0].id}`);
   } catch (err) {
     console.error(err);
+    const { rows: vtWithCompany } = await pool.query(
+      `SELECT vt.*, c.name AS company_name FROM voucher_types vt
+       LEFT JOIN companies c ON c.id = vt.company_id
+       WHERE vt.active = true ORDER BY c.sort_order NULLS LAST, vt.sort_order`
+    );
     res.status(500).render('voucher-new', {
-      voucherTypes, error: 'Speichern fehlgeschlagen. Bitte erneut versuchen.', formData: req.body
+      voucherTypes: vtWithCompany, error: 'Speichern fehlgeschlagen. Bitte erneut versuchen.', formData: req.body
     });
   }
 });
@@ -118,8 +130,11 @@ router.post('/vouchers', async (req, res) => {
 // --- Detailansicht ---
 router.get('/vouchers/:id', async (req, res) => {
   const { rows } = await pool.query(
-    `SELECT v.*, vt.label AS type_label, vt.category, vt.accent_color, vt.background_image
-     FROM vouchers v JOIN voucher_types vt ON vt.id = v.voucher_type_id
+    `SELECT v.*, vt.label AS type_label, vt.category, vt.accent_color, vt.background_image,
+            c.name AS company_name
+     FROM vouchers v
+     JOIN voucher_types vt ON vt.id = v.voucher_type_id
+     LEFT JOIN companies c ON c.id = vt.company_id
      WHERE v.id = $1`,
     [req.params.id]
   );
@@ -150,13 +165,19 @@ router.post('/vouchers/:id/cancel', async (req, res) => {
 // --- PDF-Download ---
 router.get('/vouchers/:id/pdf', async (req, res) => {
   const { rows } = await pool.query(
-    `SELECT v.*, vt.* , v.id AS id
+    `SELECT v.*, vt.*, v.id AS id
      FROM vouchers v JOIN voucher_types vt ON vt.id = v.voucher_type_id
      WHERE v.id = $1`,
     [req.params.id]
   );
   const row = rows[0];
   if (!row) return res.status(404).send('Gutschein nicht gefunden.');
+
+  let company = null;
+  if (row.company_id) {
+    const { rows: companyRows } = await pool.query('SELECT * FROM companies WHERE id = $1', [row.company_id]);
+    company = companyRows[0] || null;
+  }
 
   const baseUrl = `${req.protocol}://${req.get('host')}`;
   res.setHeader('Content-Type', 'application/pdf');
@@ -165,6 +186,7 @@ router.get('/vouchers/:id/pdf', async (req, res) => {
   await renderVoucherPdf({
     voucher: row,
     voucherType: row,
+    company,
     baseUrl
   }, res);
 });

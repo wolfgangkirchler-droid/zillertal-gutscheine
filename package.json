@@ -1,7 +1,7 @@
 {
   "name": "zillertal-sports-gutscheine",
-  "version": "1.0.0",
-  "description": "Gutschein-Verwaltung für zillertal-sports.com",
+  "version": "1.1.0",
+  "description": "Gutschein-Verwaltung für mehrere Unternehmen (Zillertal Sports, skiCHECK, ...)",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
@@ -22,6 +22,7 @@
     "pdfkit": "^0.15.0",
     "qrcode": "^1.5.3",
     "nanoid": "^3.3.7",
-    "method-override": "^3.0.0"
+    "method-override": "^3.0.0",
+    "multer": "^1.4.5-lts.1"
   }
 }

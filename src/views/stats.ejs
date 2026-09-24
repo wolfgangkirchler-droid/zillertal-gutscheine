@@ -9,10 +9,11 @@
 
 <div class="card" style="padding:0;">
   <table class="data-table">
-    <thead><tr><th>Gutscheinart</th><th>Anzahl</th><th>Davon eingelöst</th><th>Summe Wert (Wertgutscheine)</th></tr></thead>
+    <thead><tr><th>Unternehmen</th><th>Gutscheinart</th><th>Anzahl</th><th>Davon eingelöst</th><th>Summe Wert (Wertgutscheine)</th></tr></thead>
     <tbody>
       <% byType.forEach(row => { %>
         <tr>
+          <td><%= row.company_name || '—' %></td>
           <td><%= row.label %></td>
           <td><%= row.anzahl %></td>
           <td><%= row.eingeloest %></td>

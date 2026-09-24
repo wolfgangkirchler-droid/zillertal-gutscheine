@@ -15,7 +15,6 @@ async function findVoucherByCode(code) {
   return rows[0];
 }
 
-// --- Manuelle Code-Eingabe ---
 router.get('/redeem', (req, res) => {
   res.render('redeem-search', { error: null });
 });
@@ -29,7 +28,6 @@ router.post('/redeem', async (req, res) => {
   res.redirect(`/redeem/${voucher.code}`);
 });
 
-// --- Aufgerufen per QR-Code-Scan oder aus der Suche ---
 router.get('/redeem/:code', async (req, res) => {
   const voucher = await findVoucherByCode(req.params.code);
   if (!voucher) {

@@ -1,0 +1,56 @@
+<%- include('partials/header', { title: 'Unternehmen', active: 'companies', subtitle: 'Logo und Footer-Adresszeile pro Unternehmen – wird automatisch anhand der Gutscheinart aufs PDF übernommen' }) %>
+
+<% if (saved) { %><div class="alert alert-success">Änderungen gespeichert.</div><% } %>
+<% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+
+<% companies.forEach(c => { %>
+  <div class="card" style="margin-bottom:16px;">
+    <form method="POST" action="/settings/companies/<%= c.id %>" enctype="multipart/form-data">
+      <div style="display:grid; grid-template-columns: 180px 1fr; gap:20px;">
+        <div>
+          <label>Logo</label>
+          <img class="logo-preview" src="/settings/companies/<%= c.id %>/logo" onerror="this.style.display='none'" alt="">
+          <input type="file" name="logo" accept="image/*">
+          <p class="helptext">PNG mit transparentem Hintergrund empfohlen, helle/weiße Variante (erscheint auf dunklem Grund).</p>
+        </div>
+        <div>
+          <div class="form-group">
+            <label>Name</label>
+            <input type="text" name="name" value="<%= c.name %>">
+          </div>
+          <div class="form-group">
+            <label>Footer-Adresszeile <span class="hint">(erscheint unten auf jedem Gutschein-PDF)</span></label>
+            <input type="text" name="footer_text" value="<%= c.footer_text || '' %>" placeholder="Firma · Adresse · Telefon · E-Mail">
+          </div>
+          <div class="form-group">
+            <label><input type="checkbox" name="active" <%= c.active ? 'checked' : '' %> style="width:auto; display:inline-block; margin-right:6px;">Aktiv</label>
+          </div>
+          <button type="submit" class="btn btn-primary">Speichern</button>
+        </div>
+      </div>
+    </form>
+  </div>
+<% }) %>
+
+<hr class="section-divider">
+
+<div class="card" style="max-width: 640px;">
+  <h3 style="margin-top:0;">Neues Unternehmen anlegen</h3>
+  <form method="POST" action="/settings/companies" enctype="multipart/form-data">
+    <div class="form-group">
+      <label>Name</label>
+      <input type="text" name="name" required placeholder="z.B. skiCHECK Alpbachtal">
+    </div>
+    <div class="form-group">
+      <label>Footer-Adresszeile</label>
+      <input type="text" name="footer_text" placeholder="Firma · Adresse · Telefon · E-Mail">
+    </div>
+    <div class="form-group">
+      <label>Logo <span class="hint">(optional, kann später ergänzt werden)</span></label>
+      <input type="file" name="logo" accept="image/*">
+    </div>
+    <button type="submit" class="btn btn-primary">Unternehmen anlegen</button>
+  </form>
+</div>
+
+<%- include('partials/footer') %>

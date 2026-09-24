@@ -19,8 +19,6 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// Macht den eingeloggten User in allen Views verfügbar, ohne dass jede
-// Route ihn manuell mitgeben muss.
 function attachUser(req, res, next) {
   res.locals.currentUser = req.session.user || null;
   next();

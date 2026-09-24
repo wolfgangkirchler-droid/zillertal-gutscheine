@@ -1,40 +1,114 @@
-<%- include('partials/header', { title: 'Gutscheinarten', active: 'voucher-types', subtitle: 'Preise, Texte und Design-Hintergründe pro Gutscheinart' }) %>
+<%- include('partials/header', { title: 'Gutscheinarten', active: 'voucher-types', subtitle: 'Preise, Texte, Unternehmen und Design-Hintergründe pro Gutscheinart' }) %>
 
 <% if (saved) { %><div class="alert alert-success">Änderungen gespeichert.</div><% } %>
+<% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
 
 <% voucherTypes.forEach(vt => { %>
   <div class="card" style="margin-bottom:16px;">
-    <form method="POST" action="/settings/voucher-types/<%= vt.id %>">
-      <div class="form-row">
-        <div class="form-group">
-          <label>Bezeichnung</label>
-          <input type="text" name="label" value="<%= vt.label %>">
+    <form method="POST" action="/settings/voucher-types/<%= vt.id %>" enctype="multipart/form-data">
+      <div style="display:grid; grid-template-columns: 220px 1fr; gap:20px;">
+        <div>
+          <label>Hintergrundbild</label>
+          <% if (vt.background_data) { %>
+            <img class="image-preview" src="/settings/voucher-types/<%= vt.id %>/image" alt="">
+          <% } else if (vt.background_image) { %>
+            <img class="image-preview" src="/images/vouchers/<%= vt.background_image %>" onerror="this.style.display='none'" alt="">
+            <p class="helptext">Aktuell noch Server-Datei: <code><%= vt.background_image %></code>. Neues Bild hochladen, um zu ersetzen.</p>
+          <% } else { %>
+            <div class="image-preview" style="display:flex;align-items:center;justify-content:center;color:var(--color-text-muted);font-size:12px;">Kein Bild</div>
+          <% } %>
+          <input type="file" name="background" accept="image/*">
+          <p class="helptext">Querformat, mind. 1600×1100px für scharfen Druck.</p>
         </div>
-        <div class="form-group">
-          <label>Preis <span class="hint">(Vorschlagswert, € — leer bei reinem Wertgutschein)</span></label>
-          <input type="number" step="0.01" name="default_price" value="<%= vt.default_price || '' %>">
+        <div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Bezeichnung</label>
+              <input type="text" name="label" value="<%= vt.label %>">
+            </div>
+            <div class="form-group">
+              <label>Unternehmen</label>
+              <select name="company_id">
+                <option value="">– keines –</option>
+                <% companies.forEach(c => { %>
+                  <option value="<%= c.id %>" <%= vt.company_id === c.id ? 'selected' : '' %>><%= c.name %></option>
+                <% }) %>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Preis <span class="hint">(Vorschlagswert, € — leer lassen für frei befüllbar)</span></label>
+              <input type="number" step="0.01" name="default_price" value="<%= vt.default_price || '' %>">
+            </div>
+            <div class="form-group">
+              <label>Akzentfarbe</label>
+              <input type="text" name="accent_color" value="<%= vt.accent_color %>">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Standard-Leistungsbeschreibung <span class="hint">(leer lassen für frei befüllbar)</span></label>
+            <textarea name="default_leistung"><%= vt.default_leistung || '' %></textarea>
+          </div>
+          <div class="form-group">
+            <label><input type="checkbox" name="active" <%= vt.active ? 'checked' : '' %> style="width:auto; display:inline-block; margin-right:6px;">Aktiv (bei Neuerstellung auswählbar)</label>
+          </div>
+          <button type="submit" class="btn btn-primary">Speichern</button>
         </div>
       </div>
-      <div class="form-group">
-        <label>Standard-Leistungsbeschreibung</label>
-        <textarea name="default_leistung"><%= vt.default_leistung || '' %></textarea>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Hintergrundbild-Datei <span class="hint">(in public/images/vouchers/)</span></label>
-          <input type="text" name="background_image" value="<%= vt.background_image %>">
-        </div>
-        <div class="form-group">
-          <label>Akzentfarbe</label>
-          <input type="text" name="accent_color" value="<%= vt.accent_color %>">
-        </div>
-      </div>
-      <div class="form-group">
-        <label><input type="checkbox" name="active" <%= vt.active ? 'checked' : '' %> style="width:auto; display:inline-block; margin-right:6px;">Aktiv (bei Neuerstellung auswählbar)</label>
-      </div>
-      <button type="submit" class="btn btn-primary">Speichern</button>
     </form>
   </div>
 <% }) %>
+
+<hr class="section-divider">
+
+<div class="card" style="max-width: 700px;">
+  <h3 style="margin-top:0;">Neue Gutscheinart erstellen</h3>
+  <form method="POST" action="/settings/voucher-types" enctype="multipart/form-data">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Bezeichnung</label>
+        <input type="text" name="label" required placeholder="z.B. skiCHECK Skiverleih">
+      </div>
+      <div class="form-group">
+        <label>Unternehmen</label>
+        <select name="company_id">
+          <option value="">– keines –</option>
+          <% companies.forEach(c => { %>
+            <option value="<%= c.id %>"><%= c.name %></option>
+          <% }) %>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Typ</label>
+        <select name="category">
+          <option value="leistung">Leistungsgutschein (bestimmte Leistung)</option>
+          <option value="wert">Wertgutschein (Geldbetrag)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Akzentfarbe</label>
+        <input type="text" name="accent_color" value="#0EA5A5">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Vorschlagspreis <span class="hint">(optional, € — leer lassen für frei befüllbar)</span></label>
+        <input type="number" step="0.01" name="default_price">
+      </div>
+      <div class="form-group">
+        <label>Hintergrundbild <span class="hint">(optional, kann später ergänzt werden)</span></label>
+        <input type="file" name="background" accept="image/*">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Standard-Leistungsbeschreibung <span class="hint">(optional, leer lassen für frei befüllbar)</span></label>
+      <textarea name="default_leistung"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Gutscheinart erstellen</button>
+  </form>
+</div>
 
 <%- include('partials/footer') %>

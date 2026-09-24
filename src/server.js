@@ -13,6 +13,11 @@ const redeemRoutes = require('./routes/redeem');
 const settingsRoutes = require('./routes/settings');
 
 const app = express();
+
+// Render (wie die meisten Hoster) terminiert HTTPS an einem vorgeschalteten
+// Proxy und leitet intern per HTTP weiter. Ohne diese Zeile hält Express die
+// Verbindung fälschlich für unverschlüsselt und weigert sich, das sichere
+// Session-Cookie zu setzen.
 app.set('trust proxy', 1);
 
 app.set('view engine', 'ejs');
